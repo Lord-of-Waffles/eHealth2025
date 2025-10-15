@@ -7,6 +7,7 @@ Instructions to setup project:
 Disclaimer: depending on python install, you might have to use python instead of python3, or pip instead of pip3
 
 Navigate to directory where you want to clone repo
+
     git clone <repo>
 
     # Create virtual environment
