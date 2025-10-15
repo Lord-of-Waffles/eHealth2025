@@ -16,4 +16,4 @@ Navigate to directory where you want to clone repo
     source venv/bin/activate
 
     # Install required packages
-    pip3 install pandas numpy matplotlib
+    pip3 install -r requirements.txt
