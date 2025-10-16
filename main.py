@@ -5,8 +5,10 @@ import modules.get_data as get_data
 
 
 def main():
-    return None
+    df_dict = get_data()
+    clean(df_dict)
+    
 
 
-if __name__ == __main__:
+if __name__ == "__main__":
     main()
