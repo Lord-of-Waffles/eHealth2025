@@ -20,5 +20,6 @@ Navigate to directory where you want to clone repo
     pip3 install -r requirements.txt
 
 
-Initial project concept in crappy draw.io diagram
+## Initial project concept in crappy draw.io diagram
+
 ![conceptDiagram](Initial_project_concept.svg)
