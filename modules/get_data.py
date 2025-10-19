@@ -8,10 +8,9 @@ def get_data():
 
     # get all data from .csv files, allocate to separate dataframes - ben
 
-    df_clinical_train = pd.DataFrame(pd.read_csv("./data_hn/data_hn_clinical_train.csv"))
-    df_ct_train = pd.DataFrame(pd.read_csv("./data_hn/data_hn_ct_train.csv"))
-    df_pt_train = pd.DataFrame(pd.read_csv("./data_hn/data_hn_pt_train.csv"))
-
+    df_clinical_train = pd.read_csv("./data_hn/data_hn_clinical_train.csv")
+    df_ct_train = pd.read_csv("./data_hn/data_hn_ct_train.csv")
+    df_pt_train = pd.read_csv("./data_hn/data_hn_pt_train.csv")
     # return dictionary of these dataframes - ben
     return {
         "clinical" : df_clinical_train,
