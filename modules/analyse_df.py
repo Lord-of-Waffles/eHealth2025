@@ -19,4 +19,4 @@ def analyse_df(df):
     # show which rows are duplicated if there are any - Ben
     if duplicate_sum > 0:
         print("These are rows are duplicates:")
-        print(df.duplicated())
+        print(df[df.duplicated(keep=False)].sort_values(by=list(df.columns)))
