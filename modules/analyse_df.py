@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Takes a dataframe as input, runs some simple functions to see the top & bottom rows + a statistic summary - Ben
 def analyse_df(df):
@@ -31,6 +32,13 @@ def analyse_df(df):
     print("\n<====================================================================================================================>")
     print("df.info()")
     print(df.info())
+    print("\n<====================================================================================================================>")
+    print("6. Outliers")
+    print("Generating boxplot...")
+    df.boxplot()
+    plt.show()
+
+
 
 
 
