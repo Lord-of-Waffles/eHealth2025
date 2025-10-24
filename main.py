@@ -4,6 +4,7 @@ from modules.clean import clean
 from modules.get_data import get_data
 from modules.analyse_df import analyse_df
 from modules.fix_missing_values_for_clinical import fix_missing_values
+from modules.train_model import train_model
 
 
 def main():
@@ -11,6 +12,9 @@ def main():
     df_dict = get_data()
     #clean(df_dict)
     df_dict["clinical"] = fix_missing_values(df_dict["clinical"])
+    print("Starting Training")
+    trained_model = train_model(df_dict["clinical"])
+    print("Training complete!")
 
     # can use these calls to take a look at the data from the dataframes :) - Ben
     #analyse_df(df_dict["clinical"]) # This has some missing data if not cleaned, there are missing values in Tobacco (10.1%), Alcohol (10%), Performance Status (9.3%) - Ben
