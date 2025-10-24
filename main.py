@@ -5,27 +5,39 @@ from modules.get_data import get_data
 from modules.get_test_data import get_test_data
 from modules.analyse_df import analyse_df
 from modules.fix_missing_values_for_clinical import fix_missing_values
-from modules.train_model import train_model
-from modules.test_model import test_model
+from modules.train_model import train_model, train_model_ct
+from modules.test_model import test_model, test_model_ct
+
+
+def run_clinical(df_train, df_test):
+    print("\n=== Clinical: Training ===")
+    df_train = fix_missing_values(df_train.copy())
+    clf = train_model(df_train)
+    print("Clinical training complete.")
+
+    print("\n=== Clinical: Testing ===")
+    df_test = fix_missing_values(df_test.copy())
+    test_model(df_test, clf)   # prints Accuracy, Report, Confusion Matrix
+
+
+def run_ct(df_train, df_test, include_center_id=False):
+    print("\n=== CT: Training ===")
+    clf_ct = train_model_ct(df_train, include_center_id=include_center_id)
+    print("CT training complete.")
+
+    print("\n=== CT: Testing ===")
+    test_model_ct(df_test, clf_ct)  # prints Accuracy, ROC-AUC, Report, Confusion Matrix
+
+
 
 
 def main():
-    # Do we want to use all the .csv files? currently get_data returns a dict with dataframes from all 3 files. - Ben
-    df_dict = get_data()
-    #clean(df_dict)
-    df_dict["clinical"] = fix_missing_values(df_dict["clinical"])
-
-    print("Starting training...")
-    trained_model = train_model(df_dict["clinical"])
-    print("Training complete!\n")
-
-    print("Cleaning test data...")
+    df_dict = get_data()         
     df_test_dict = get_test_data()
-    df_test_dict["clinical"] = fix_missing_values(df_test_dict["clinical"])
-    print("Clinical test data cleaned!\n")
 
-    print("Starting test...")
-    print(test_model(df_test_dict["clinical"], trained_model))
+    #run_clinical(df_dict["clinical"], df_test_dict["clinical"])
+    run_ct(df_dict["ct"], df_test_dict["ct"], include_center_id=False)
+
 
     # can use these calls to take a look at the data from the dataframes :) - Ben
     #analyse_df(df_dict["clinical"]) # This has some missing data if not cleaned, there are missing values in Tobacco (10.1%), Alcohol (10%), Performance Status (9.3%) - Ben
