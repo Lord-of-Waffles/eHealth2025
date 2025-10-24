@@ -79,3 +79,46 @@ def train_model_ct(df_ct, include_center_id: bool = False, random_state: int = 4
     clf.feature_cols_ = feature_cols
     clf.include_center_id_ = include_center_id
     return clf
+
+
+
+def train_model_pt(df_pt, include_center_id: bool = False, random_state: int = 42):
+    """
+    Train an MLP on PET radiomics.
+    - Drops Outcome & PatientID (and CenterID by default to avoid site bias).
+    - Scales ALL numeric radiomics features with RobustScaler (handles outliers).
+    - Saves the exact feature columns used so test uses the same order.
+    """
+    drop_cols = ["Outcome", "PatientID"]
+    if not include_center_id and "CenterID" in df_pt.columns:
+        drop_cols.append("CenterID")
+
+    feature_cols = [c for c in df_pt.columns if c not in drop_cols]
+
+    X = df_pt[feature_cols]
+    y = df_pt["Outcome"].astype(int)
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", RobustScaler(), feature_cols)
+        ],
+        remainder="drop",
+        verbose_feature_names_out=False,
+    )
+
+    mlp = MLPClassifier(
+        hidden_layer_sizes=(64, 32),
+        activation="relu",
+        solver="adam",
+        max_iter=500,
+        random_state=random_state
+    )
+
+    clf = Pipeline(steps=[("preprocess", preprocessor),
+                         ("mlp", mlp)])
+    clf.fit(X, y)
+
+    # remember training feature order for testing
+    clf.feature_cols_ = feature_cols
+    clf.include_center_id_ = include_center_id
+    return clf

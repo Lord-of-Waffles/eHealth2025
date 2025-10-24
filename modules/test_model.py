@@ -30,7 +30,7 @@ def test_model(df_test, clf):
 
 
 
-def test_model_ct(df_test, clf):
+def test_model_ct_pt(df_test, clf):
     """
     Test a radiomics model (CT or PET).
     Uses the SAME feature columns the model was trained on.
