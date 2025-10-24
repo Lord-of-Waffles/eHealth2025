@@ -13,7 +13,7 @@ def main():
     df_dict["clinical"] = fix_missing_values(df_dict["clinical"])
 
     # can use these calls to take a look at the data from the dataframes :) - Ben
-    analyse_df(df_dict["clinical"]) # This has some missing data if not cleaned, there are missing values in Tobacco (10.1%), Alcohol (10%), Performance Status (9.3%) - Ben
+    #analyse_df(df_dict["clinical"]) # This has some missing data if not cleaned, there are missing values in Tobacco (10.1%), Alcohol (10%), Performance Status (9.3%) - Ben
     #analyse_df(df_dict["ct"]) # analyse_df didn't find duplicates or missing values in here - Ben
     #analyse_df(df_dict["pt"]) # nor here, but maybe it's not looking in the right places - Ben
 
