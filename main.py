@@ -8,6 +8,9 @@ from modules.run_models import (
     run_clinical_knn,
     run_ct_knn,
     run_pt_knn,
+    run_clinical_ensemble,
+    run_ct_ensemble,
+    run_pt_ensemble
 )
 
 
@@ -19,6 +22,9 @@ def print_menu():
     print("4. Clinical (kNN)")
     print("5. CT (kNN)")
     print("6. PET (kNN)")
+    print("7. Clinical (Ensemble)")
+    print("8. CT (Ensemble)")
+    print("9. PT (Ensemble)")
     print("0. Exit")
     print("=======================================")
 
@@ -52,6 +58,15 @@ def main():
 
         elif choice == "6":
             run_pt_knn(df_dict["pt"], df_test_dict["pt"], include_center_id=False)
+        
+        elif choice == "7":
+            run_clinical_ensemble(df_dict["clinical"], df_test_dict["clinical"])
+        
+        elif choice == "8":
+            run_ct_ensemble(df_dict["ct"], df_test_dict["ct"], include_center_id=False)
+
+        elif choice == "9":
+            run_pt_ensemble(df_dict["pt"], df_test_dict["pt"], include_center_id=False)
 
         else:
             print("Invalid choice. Please select a valid option.")
