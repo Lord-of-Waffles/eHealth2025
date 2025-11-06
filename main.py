@@ -16,6 +16,7 @@ from modules.run_models import (
     run_pt_ensemble
 )
 from modules.analyse_model_metrics import analyse_results 
+from modules.visualize_data import visualize_menu
 
 # Configuration
 RESULTS_DIR = "results"
@@ -106,6 +107,7 @@ def print_menu():
     print("8. CT (Ensemble)")
     print("9. PET (Ensemble)")
     print("10. Run ALL models (comparison)")
+    print("11) Visualize data")
     print("0. Exit")
     print("=======================================")
 
@@ -203,6 +205,9 @@ def main():
             run_all_models(df_dict, df_test_dict)
             log_message("Starting analysis of model metrics after running all models...")
             analyse_results()
+
+        elif choice == "11":
+            visualize_menu(df_dict)
 
         else:
             print("Invalid choice. Please select a valid option.")
