@@ -7,8 +7,24 @@ from typing import List, Tuple, Dict, Optional
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns  # <-- new!
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+
+
+# ---------- Global styling ----------
+# Set once for all plots
+plt.style.use("seaborn-v0_8-whitegrid")
+plt.rcParams.update({
+    "font.size": 10,
+    "axes.titlesize": 12,
+    "axes.labelsize": 10,
+    "xtick.labelsize": 9,
+    "ytick.labelsize": 9,
+    "figure.titlesize": 14,
+    "savefig.dpi": 200,
+    "figure.autolayout": True,
+})
 
 
 # ---------- helpers ----------
@@ -40,10 +56,6 @@ def describe_dataset(df: pd.DataFrame,
                      out_dir: str,
                      label_col: str = "Outcome",
                      exclude_cols: Optional[set] = None) -> Dict:
-    """
-    Summarize dataset: shapes, types, missing values, cardinality, basic stats.
-    Saves a markdown summary and returns a dict with key facts.
-    """
     exclude = set(exclude_cols or EXCLUDED_COLS_DEFAULT)
     _ensure_dir(out_dir)
 
@@ -77,8 +89,13 @@ def describe_dataset(df: pd.DataFrame,
     lines.append(f"- Numeric features ({len(numeric_cols)}): `{', '.join(numeric_cols[:15])}{'…' if len(numeric_cols)>15 else ''}`")
     lines.append(f"- Categorical features ({len(categorical_cols)}): `{', '.join(categorical_cols[:15])}{'…' if len(categorical_cols)>15 else ''}`")
     lines.append(f"- Total missing values: **{summary['missing_total']}**\n")
-    lines.append("## Head (first 5 rows)\n")
-    lines.append(df.head(5).to_markdown(index=False))
+    try:
+        lines.append("## Head (first 5 rows)\n")
+        lines.append(df.head(5).to_markdown(index=False))
+    except ImportError:
+        # Fallback if tabulate not installed
+        lines.append("## Head (first 5 rows)\n")
+        lines.append("```\n" + df.head(5).to_string() + "\n```")
 
     _save_text(os.path.join(out_dir, f"{name}__profile.md"), "\n".join(lines))
     _save_json(os.path.join(out_dir, f"{name}__profile.json"), summary)
@@ -89,14 +106,19 @@ def plot_missingness(df: pd.DataFrame, name: str, out_dir: str) -> None:
     _ensure_dir(out_dir)
     missing = df.isna().sum()
     if missing.sum() == 0:
-        # nothing to plot
         return
-    plt.figure()
-    missing.plot(kind="bar")
-    plt.title(f"Missing values per column — {name}")
+
+    missing = missing[missing > 0].sort_values(ascending=False)
+    if missing.empty:
+        return
+
+    plt.figure(figsize=(8, 4))
+    missing.plot(kind="bar", color="firebrick")
+    plt.title(f"Missing values per column — {name}", fontsize=12)
     plt.ylabel("Count")
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, f"{name}__missing_per_column.png"), dpi=140)
+    plt.savefig(os.path.join(out_dir, f"{name}__missing_per_column.png"))
     plt.close()
 
 
@@ -116,13 +138,13 @@ def plot_histograms(df: pd.DataFrame,
     plt.figure(figsize=(18, 3.2 * rows))
     for i, col in enumerate(cols, 1):
         plt.subplot(rows, 6, i)
-        df[col].plot(kind="hist", bins=bins)
+        sns.histplot(df[col].dropna(), kde=True, bins=bins, color="steelblue")
         plt.title(col, fontsize=9)
         plt.xlabel("")
         plt.ylabel("")
-    plt.suptitle(f"Numeric distributions (first {len(cols)} of {len(numeric_cols)}) — {name}")
+    plt.suptitle(f"Numeric distributions (first {len(cols)} of {len(numeric_cols)}) — {name}", fontsize=13)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(os.path.join(out_dir, f"{name}__numeric_histograms.png"), dpi=140)
+    plt.savefig(os.path.join(out_dir, f"{name}__numeric_histograms.png"))
     plt.close()
 
 
@@ -143,33 +165,42 @@ def plot_categorical_bars(df: pd.DataFrame,
     plt.figure(figsize=(18, 3.2 * rows))
     for i, col in enumerate(cols, 1):
         plt.subplot(rows, 6, i)
-        df[col].value_counts(dropna=False).plot(kind="bar")
+        vc = df[col].value_counts(dropna=False).sort_values(ascending=True)
+        vc.plot(kind="barh", color="lightcoral")
         plt.title(col, fontsize=9)
         plt.xlabel("")
         plt.ylabel("")
-    plt.suptitle(f"Categorical distributions (≤{max_unique} unique) — {name}")
+    plt.suptitle(f"Categorical distributions (≤{max_unique} unique values) — {name}", fontsize=13)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(os.path.join(out_dir, f"{name}__categorical_bars.png"), dpi=140)
+    plt.savefig(os.path.join(out_dir, f"{name}__categorical_bars.png"))
     plt.close()
 
 
-def plot_correlation(df: pd.DataFrame, name: str, out_dir: str, max_cols: int = 80) -> None:
+def plot_correlation(df: pd.DataFrame, name: str, out_dir: str, max_cols: int = 20) -> None:
     _ensure_dir(out_dir)
     numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     if len(numeric_cols) < 2:
         return
-    
+
     numeric_cols = numeric_cols[:max_cols]
-    corr = df[numeric_cols].corr(numeric_only=True)
+    corr = df[numeric_cols].corr()
 
     plt.figure(figsize=(10, 8))
-    plt.imshow(corr.values, aspect="auto")
-    plt.colorbar()
-    plt.xticks(range(len(numeric_cols)), numeric_cols, rotation=90, fontsize=6)
-    plt.yticks(range(len(numeric_cols)), numeric_cols, fontsize=6)
-    plt.title(f"Correlation heatmap (first {len(numeric_cols)}) — {name}")
+    sns.heatmap(
+        corr,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        center=0,
+        square=True,
+        cbar_kws={"shrink": 0.8},
+        linewidths=0.5
+    )
+    plt.title(f"Feature Correlation Matrix — {name}", pad=20, fontsize=13)
+    plt.xticks(rotation=45, ha="right")
+    plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, f"{name}__corr_heatmap.png"), dpi=160)
+    plt.savefig(os.path.join(out_dir, f"{name}__corr_heatmap.png"))
     plt.close()
 
 
@@ -178,9 +209,6 @@ def plot_pca_2d(df: pd.DataFrame,
                 out_dir: str,
                 label_col: str = "Outcome",
                 exclude_cols: Optional[set] = None) -> None:
-    """
-    PCA on numeric features only; points coloured by label if present.
-    """
     exclude = set(exclude_cols or EXCLUDED_COLS_DEFAULT)
     _ensure_dir(out_dir)
 
@@ -192,7 +220,6 @@ def plot_pca_2d(df: pd.DataFrame,
     X = X.replace([np.inf, -np.inf], np.nan).dropna(axis=0, how="any")
     y = None
     if label_col in df.columns:
-        # Align labels with cleaned X
         y = df.loc[X.index, label_col]
 
     scaler = StandardScaler()
@@ -203,22 +230,31 @@ def plot_pca_2d(df: pd.DataFrame,
 
     plt.figure(figsize=(7, 6))
     if y is not None:
-        # Encode y as integers for colors
-        y_codes = pd.Categorical(y).codes
-        scatter = plt.scatter(X2[:, 0], X2[:, 1], c=y_codes, s=16)
-        # Build legend from categories
-        categories = list(pd.Categorical(y).categories)
-        handles = [plt.Line2D([0], [0], marker='o', linestyle='', markersize=6) for _ in categories]
-        plt.legend(handles, [str(c) for c in categories], title=label_col, loc="best", fontsize=8)
+        y_cat = pd.Categorical(y)
+        unique_labels = y_cat.categories
+        palette = sns.color_palette("husl", len(unique_labels))
+        for i, label in enumerate(unique_labels):
+            mask = y == label
+            plt.scatter(
+                X2[mask, 0], X2[mask, 1],
+                label=str(label),
+                color=palette[i],
+                s=25,
+                alpha=0.7,
+                edgecolors="w",
+                linewidth=0.3
+            )
+        plt.legend(title=label_col, frameon=True, fontsize=9, title_fontsize=10)
     else:
-        plt.scatter(X2[:, 0], X2[:, 1], s=16)
+        plt.scatter(X2[:, 0], X2[:, 1], s=25, alpha=0.7, color="gray", edgecolors="w", linewidth=0.3)
 
     evr = pca.explained_variance_ratio_
-    plt.xlabel(f"PC1 ({evr[0]*100:.1f}% var)")
-    plt.ylabel(f"PC2 ({evr[1]*100:.1f}% var)")
-    plt.title(f"PCA (2D) — {name}")
+    plt.xlabel(f"PC1 ({evr[0] * 100:.1f}% variance)", fontsize=11)
+    plt.ylabel(f"PC2 ({evr[1] * 100:.1f}% variance)", fontsize=11)
+    plt.title(f"PCA (2D Projection) — {name}", fontsize=13)
+    plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, f"{name}__pca2d.png"), dpi=160)
+    plt.savefig(os.path.join(out_dir, f"{name}__pca2d.png"))
     plt.close()
 
 
@@ -229,10 +265,6 @@ def visualize_dataset(df: pd.DataFrame,
                       base_out_dir: str = "results/visualizations",
                       label_col: str = "Outcome",
                       exclude_cols: Optional[set] = None) -> Dict:
-    """
-    Run a complete profiling + visualization bundle for one dataframe.
-    Returns the profile dict (facts about the dataset).
-    """
     dataset_dir = os.path.join(base_out_dir, name)
     _ensure_dir(dataset_dir)
 
@@ -247,10 +279,6 @@ def visualize_dataset(df: pd.DataFrame,
 
 
 def visualize_menu(df_dict: Dict[str, pd.DataFrame]) -> None:
-    """
-    Simple console menu to pick which dataset(s) to visualize.
-    Saves images and markdown into results/visualizations/...
-    """
     options = {
         "1": ("clinical", "Clinical"),
         "2": ("ct", "CT"),
